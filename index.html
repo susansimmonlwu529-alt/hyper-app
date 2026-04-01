@@ -1,1 +1,337 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hyper Nutrition Store</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* БАЗОВЫЕ СТИЛИ */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 0; padding-bottom: 75px; -webkit-tap-highlight-color: transparent; }
+        h2 { text-align: center; color: #d4ff00; margin-top: 20px; font-size: 1.4em; }
+        .container { padding: 15px; display: none; animation: fadeIn 0.3s ease-in-out; }
+        .active-view { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* КАТЕГОРИИ (Скролл бар) */
+        .category-scroll { display: flex; overflow-x: auto; padding: 0 15px 15px 15px; gap: 10px; scrollbar-width: none; }
+        .category-scroll::-webkit-scrollbar { display: none; }
+        .cat-chip { background: #2a2a2a; color: #aaa; padding: 8px 16px; border-radius: 20px; font-size: 0.85em; white-space: nowrap; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .cat-chip.active { background: #d4ff00; color: #000; font-weight: bold; box-shadow: 0 0 10px rgba(212, 255, 0, 0.2); }
+
+        /* КАТАЛОГ (Сетка товаров) */
+        .grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+        .card { background: #1e1e1e; border-radius: 12px; width: 48%; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #2a2a2a; }
+        .card img { width: 100%; height: 120px; object-fit: contain; border-radius: 8px; background: #fff; margin-bottom: 8px; }
+        .title { font-size: 0.9em; font-weight: bold; margin: 4px 0; color: #d4ff00; line-height: 1.2; }
+        .desc { font-size: 0.75em; color: #888; margin-bottom: 10px; flex-grow: 1; }
+        .price { font-size: 1.1em; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        .btn { background-color: #d4ff00; color: #000; border: none; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 0.9em; }
+        .btn:active { transform: scale(0.95); }
+        .empty-state { text-align: center; width: 100%; padding: 40px 0; color: #666; font-style: italic; }
+
+        /* КОРЗИНА И ОФОРМЛЕНИЕ */
+        .cart-item, .order-item { background: #1e1e1e; padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a2a; }
+        .cart-item-title { font-size: 0.95em; color: #fff; }
+        .cart-item-price { font-size: 1em; color: #d4ff00; font-weight: bold; }
+        .remove-btn { background: rgba(255, 50, 50, 0.1); border: none; color: #ff4444; font-size: 1.2em; cursor: pointer; border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-left: 10px; }
+        
+        /* Чек (Сумма и Доставка) */
+        .cart-summary { background: #1a1a1a; padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px dashed #333; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; color: #aaa; font-size: 0.9em; }
+        .summary-total { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; color: #d4ff00; font-size: 1.2em; font-weight: bold; }
+        
+        /* Форма заказа */
+        .checkout-box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #2a2a2a; }
+        .checkout-box h3 { margin-top: 0; color: #fff; font-size: 1.1em; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 0.85em; color: #aaa; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; font-size: 0.95em; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #d4ff00; }
+        .payment-info { background: #222; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.85em; border-left: 4px solid #d4ff00; display: none; color: #ccc; line-height: 1.4; }
+
+        /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #151515; display: flex; justify-content: space-around; padding: 12px 0 20px 0; border-top: 1px solid #222; z-index: 100; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        .nav-item { color: #666; text-align: center; font-size: 0.8em; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s; }
+        .nav-item.active { color: #d4ff00; font-weight: bold; }
+        .badge { background: #d4ff00; color: #000; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-left: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="view-catalog" class="container active-view" style="padding-top: 10px;">
+        <h2>Витрина</h2>
+        
+        <div class="category-scroll">
+            <div class="cat-chip active" onclick="filterCategory('all', this)">Все</div>
+            <div class="cat-chip" onclick="filterCategory('sport', this)">Спортпит</div>
+            <div class="cat-chip" onclick="filterCategory('vitamins', this)">Витамины</div>
+            <div class="cat-chip" onclick="filterCategory('sets', this)">Наборы</div>
+            <div class="cat-chip" onclick="filterCategory('accessories', this)">Шейкеры</div>
+        </div>
+
+        <div class="grid" id="products-grid"></div>
+    </div>
+
+    <div id="view-cart" class="container">
+        <h2>Ваша корзина</h2>
+        <div id="cart-items"></div>
+        
+        <div id="cart-summary-block" class="cart-summary" style="display:none;">
+            <div class="summary-row"><span>Товары:</span> <span id="cart-subtotal">0 ₽</span></div>
+            <div class="summary-row"><span>Доставка:</span> <span id="cart-delivery">0 ₽</span></div>
+            <div class="summary-total"><span>Итого:</span> <span id="cart-total-price">0 ₽</span></div>
+        </div>
+        
+        <div id="checkout-form" class="checkout-box" style="display:none;">
+            <h3>Оформление заказа</h3>
+            
+            <div class="form-group">
+                <label>Ваш город (обязательно):</label>
+                <input type="text" id="city" placeholder="Например: Махачкала или Москва" oninput="checkCity()">
+            </div>
+            
+            <div class="form-group">
+                <label>Способ оплаты:</label>
+                <select id="payment-method" onchange="togglePaymentInfo()">
+                    <option value="none">Сначала введите город...</option>
+                </select>
+            </div>
+            
+            <div class="payment-info" id="transfer-details">
+                <b>💳 Перевод по СБП:</b><br>
+                По номеру: <b>+7 (999) 000-00-00</b><br>
+                Банки: Сбер, Ozon, ВТБ, Россельхоз.<br><br>
+                <i>Менеджер подтвердит наличие и пришлет реквизиты после оформления заявки.</i>
+            </div>
+
+            <button class="btn" onclick="submitOrder()" style="margin-top: 10px;">Отправить заказ менеджеру</button>
+        </div>
+    </div>
+
+    <div id="view-profile" class="container">
+        <h2>История заказов</h2>
+        <div id="order-history"></div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchView('catalog', this)">
+            <span style="font-size: 1.4em;">🛒</span>
+            Каталог
+        </div>
+        <div class="nav-item" onclick="switchView('cart', this)">
+            <span style="font-size: 1.4em;">🛍</span>
+            <div>Корзина<span class="badge" id="cart-badge">0</span></div>
+        </div>
+        <div class="nav-item" onclick="switchView('profile', this)">
+            <span style="font-size: 1.4em;">👤</span>
+            Профиль
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram API
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем на весь экран
+        tg.enableClosingConfirmation(); // Предупреждение при случайном закрытии свайпом вниз
+
+        // База товаров
+        const products = [
+            { id: 1, name: "Maxler Whey Protein", desc: "30г белка в порции. Чистый рост.", price: 4500, category: "sport", img: "https://avatars.mds.yandex.net/get-mpic/16334824/2a0000019cb90d62208755f4e5073447de63/orig" },
+            { id: 2, name: "Olimp Creatine", desc: "Взрывная сила и объем мышц.", price: 1900, category: "sport", img: "https://musculshop.ru/upload/resize_cache/webp/upload/medialibrary/96c/96cb81925e85e956d4405362c99fe907.webp" },
+            { id: 3, name: "Olimp Beta-Alanine", desc: "Выносливость на тренировке.", price: 1300, category: "sport", img: "https://avatars.mds.yandex.net/get-mpic/14360956/2a000001985b640168766cbf93f4a38d843f/orig" },
+            { id: 4, name: "Now Ultra Omega-3", desc: "Здоровье сердца и сосудов.", price: 2000, category: "vitamins", img: "https://ir.ozone.ru/s3/multimedia-1-b/c1000/7024575791.jpg" },
+            { id: 5, name: "Now Vitamin D-3", desc: "Иммунитет и поддержка гормонов.", price: 1500, category: "vitamins", img: "https://main-cdn.sbermegamarket.ru/big1/hlr-system/1513778624/100023624315b0.jpg" },
+            { id: 6, name: "Набор «База для роста»", desc: "Протеин + Креатин + Витамин D3.", price: 7500, category: "sets", img: "https://placehold.co/400x400/1e1e1e/d4ff00?text=BUNDLE+SET" }
+        ];
+
+        let cart = [];
+        let orders = JSON.parse(localStorage.getItem('hyper_orders')) || [];
+        
+        // Переменные для калькулятора
+        let subtotal = 0;
+        let deliveryFee = 0;
+
+        // Запуск приложения
+        function init() { 
+            renderProducts('all'); 
+            updateHistory(); 
+        }
+
+        // Фильтрация категорий
+        function filterCategory(category, el) {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderProducts(category);
+        }
+
+        // Отрисовка витрины
+        function renderProducts(category) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+            const filtered = category === 'all' ? products : products.filter(p => p.category === category);
+            
+            if (filtered.length === 0) { 
+                grid.innerHTML = '<div class="empty-state">Товары в этой категории скоро появятся! ⏳</div>'; 
+                return; 
+            }
+            
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <img src="${p.img}" alt="${p.name}">
+                        <div class="title">${p.name}</div>
+                        <div class="desc">${p.desc}</div>
+                        <div class="price">${p.price} ₽</div>
+                        <button class="btn" onclick="addToCart(${p.id})">В корзину</button>
+                    </div>`;
+            });
+        }
+
+        // Переключение между Каталогом, Корзиной и Профилем
+        function switchView(viewId, el) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active-view'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active-view');
+            el.classList.add('active');
+            if(viewId === 'cart') renderCart();
+        }
+
+        // Добавление в корзину
+        function addToCart(id) {
+            cart.push(products.find(p => p.id === id));
+            document.getElementById('cart-badge').innerText = cart.length;
+            try { tg.HapticFeedback.impactOccurred('light'); } catch(e) {} // Вибрация
+        }
+
+        // Отрисовка корзины
+        function renderCart() {
+            const cartDiv = document.getElementById('cart-items');
+            cartDiv.innerHTML = '';
+            subtotal = 0;
+            
+            if (cart.length === 0) {
+                cartDiv.innerHTML = '<div class="empty-state">Ваша корзина пуста 🛒<br><br><small>Перейдите в каталог, чтобы добавить товары.</small></div>';
+                document.getElementById('checkout-form').style.display = 'none';
+                document.getElementById('cart-summary-block').style.display = 'none';
+            } else {
+                cart.forEach((item, index) => {
+                    subtotal += item.price;
+                    cartDiv.innerHTML += `
+                        <div class="cart-item">
+                            <div>
+                                <div class="cart-item-title">${item.name}</div>
+                                <div class="cart-item-price">${item.price} ₽</div>
+                            </div>
+                            <button class="remove-btn" onclick="removeFromCart(${index})">✖</button>
+                        </div>`;
+                });
+                document.getElementById('checkout-form').style.display = 'block';
+                document.getElementById('cart-summary-block').style.display = 'block';
+                checkCity(); // Пересчитываем цены доставки при входе в корзину
+            }
+        }
+
+        // Удаление из корзины
+        function removeFromCart(index) { 
+            cart.splice(index, 1); 
+            document.getElementById('cart-badge').innerText = cart.length; 
+            renderCart(); 
+        }
+
+        // Умный расчет города и доставки
+        function checkCity() {
+            const city = document.getElementById('city').value.trim().toLowerCase();
+            const paySelect = document.getElementById('payment-method');
+            
+            // Сброс выбора
+            paySelect.innerHTML = ''; 
+            
+            if (city === '') {
+                paySelect.innerHTML = '<option value="none">Сначала введите город...</option>';
+                document.getElementById('transfer-details').style.display = 'none';
+                deliveryFee = 0;
+            } else if (city.includes('махачкала') || city === 'мхк') {
+                // Если Махачкала
+                paySelect.innerHTML = `
+                    <option value="Наличными">💵 Наличными при получении</option>
+                    <option value="Перевод СБП">💳 Перевод по СБП</option>`;
+                deliveryFee = 0; 
+            } else {
+                // Если другой город (СДЭК/Почта)
+                paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
+                deliveryFee = Math.round(subtotal * 0.10); // +10% от суммы
+            }
+            
+            updateTotalDisplay();
+            togglePaymentInfo();
+        }
+
+        // Обновление цифр в чеке
+        function updateTotalDisplay() {
+            document.getElementById('cart-subtotal').innerText = `${subtotal} ₽`;
+            document.getElementById('cart-delivery').innerText = deliveryFee === 0 ? `Бесплатно` : `+ ${deliveryFee} ₽`;
+            document.getElementById('cart-total-price').innerText = `${subtotal + deliveryFee} ₽`;
+        }
+
+        // Показ/Скрытие реквизитов СБП
+        function togglePaymentInfo() {
+            document.getElementById('transfer-details').style.display = document.getElementById('payment-method').value.includes('СБП') ? 'block' : 'none';
+        }
+
+        // Отправка заказа в бота
+        function submitOrder() {
+            const city = document.getElementById('city').value.trim();
+            if(!city) { 
+                tg.showAlert("Пожалуйста, укажите ваш город для расчета доставки!"); 
+                return; 
+            }
+
+            const method = document.getElementById('payment-method').value;
+            const finalTotal = subtotal + deliveryFee;
+            
+            // Формируем JSON-пакет данных для Python-бота
+            const orderData = {
+                items: cart.map(i => i.name),
+                subtotal: subtotal,
+                delivery: deliveryFee,
+                total: finalTotal,
+                city: city,
+                payment: method
+            };
+
+            // Сохраняем в историю (Профиль)
+            orders.unshift({ date: new Date().toLocaleDateString(), total: finalTotal, status: "В обработке" });
+            localStorage.setItem('hyper_orders', JSON.stringify(orders));
+
+            // Отправляем данные в Телеграм и закрываем окно
+            tg.sendData(JSON.stringify(orderData));
+            tg.close();
+        }
+
+        // Отрисовка истории заказов
+        function updateHistory() {
+            const histDiv = document.getElementById('order-history');
+            if(orders.length === 0) { 
+                histDiv.innerHTML = '<div class="empty-state">У вас пока нет оформленных заказов.</div>'; 
+                return; 
+            }
+            histDiv.innerHTML = '';
+            orders.forEach(o => {
+                histDiv.innerHTML += `
+                    <div class="order-item" style="display:flex; justify-content:space-between;">
+                        <div>
+                            <div style="color:#fff; font-size:0.9em;">Заказ от ${o.date}</div>
+                            <div style="color:#aaa; font-size:0.8em; margin-top:4px;">${o.status} ⏳</div>
+                        </div>
+                        <div style="color:#d4ff00; font-weight:bold;">${o.total} ₽</div>
+                    </div>`;
+            });
+        }
+
+        // Запускаем отрисовку при загрузке страницы
+        init();
+    </script>
+</body>
+</html>
