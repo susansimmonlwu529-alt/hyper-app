@@ -6,11 +6,11 @@
     <title>Hyper Nutrition Store</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ЦВЕТОВАЯ ПАЛИТРА БРЕНДА (Красный и Черный) */
+        /* ЦВЕТОВАЯ ПАЛИТРА БРЕНДА */
         :root {
             --bg-main: #050505;
             --bg-card: #121212;
-            --accent: #E60000; /* Глубокий красный */
+            --accent: #E60000;
             --accent-glow: rgba(230, 0, 0, 0.3);
             --text-main: #ffffff;
             --text-muted: #888888;
@@ -28,108 +28,70 @@
             -webkit-tap-highlight-color: transparent; 
         }
         
-        /* ШАПКА БРЕНДА */
         .brand-header {
-            text-align: center;
-            padding: 15px 0 5px 0;
-            font-weight: 900;
-            font-size: 1.5em;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            text-align: center; padding: 15px 0 5px 0; font-weight: 900; font-size: 1.5em;
+            letter-spacing: 2px; text-transform: uppercase;
             background: linear-gradient(180deg, rgba(230,0,0,0.15) 0%, rgba(5,5,5,0) 100%);
         }
         .brand-header span { color: var(--accent); }
 
-        h2 { 
-            text-align: center; 
-            margin-top: 10px; 
-            font-size: 1.2em; 
-            color: var(--text-muted);
-            font-weight: 500;
-        }
+        h2 { text-align: center; margin-top: 10px; font-size: 1.2em; color: var(--text-muted); font-weight: 500; }
 
         .container { padding: 10px 15px; display: none; animation: fadeIn 0.2s ease-in-out; }
         .active-view { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* КАТЕГОРИИ (Скролл бар) */
-        .category-scroll { 
-            display: flex; overflow-x: auto; padding: 5px 0 15px 0; gap: 10px; scrollbar-width: none; 
-        }
+        /* КАТЕГОРИИ */
+        .category-scroll { display: flex; overflow-x: auto; padding: 5px 0 15px 0; gap: 10px; scrollbar-width: none; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .cat-chip { 
-            background: var(--border-color); 
-            color: var(--text-muted); 
-            padding: 8px 18px; 
-            border-radius: 20px; 
-            font-size: 0.85em; 
-            white-space: nowrap; 
-            cursor: pointer; 
-            transition: 0.3s; 
-            border: 1px solid transparent; 
+            background: var(--border-color); color: var(--text-muted); padding: 8px 18px; 
+            border-radius: 20px; font-size: 0.85em; white-space: nowrap; cursor: pointer; transition: 0.3s; 
         }
-        .cat-chip.active { 
-            background: var(--accent); 
-            color: #fff; 
-            font-weight: bold; 
-            box-shadow: 0 0 12px var(--accent-glow); 
-        }
+        .cat-chip.active { background: var(--accent); color: #fff; font-weight: bold; box-shadow: 0 0 12px var(--accent-glow); }
 
-        /* КАТАЛОГ (Сетка товаров) */
+        /* КАТАЛОГ И КАРТОЧКИ */
         .grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
         .card { 
-            background: var(--bg-card); 
-            border-radius: 12px; 
-            width: 48%; 
-            padding: 10px; 
-            box-sizing: border-box; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            border: 1px solid var(--border-color); 
+            background: var(--bg-card); border-radius: 12px; width: 48%; padding: 10px; 
+            box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-color); 
         }
-        .card img { 
-            width: 100%; height: 120px; object-fit: contain; border-radius: 8px; background: #fff; margin-bottom: 10px; 
-        }
+        .card img { width: 100%; height: 120px; object-fit: contain; border-radius: 8px; background: #fff; margin-bottom: 10px; }
         .title { font-size: 0.9em; font-weight: bold; margin: 4px 0; color: var(--text-main); line-height: 1.2; }
         .desc { font-size: 0.75em; color: var(--text-muted); margin-bottom: 10px; flex-grow: 1; }
         .price { font-size: 1.1em; font-weight: bold; color: var(--accent); margin-bottom: 10px; }
         
         .btn { 
-            background-color: var(--accent); 
-            color: #fff; 
-            border: none; 
-            border-radius: 8px; 
-            padding: 10px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: 0.2s; 
-            font-size: 0.9em; 
-            text-transform: uppercase;
+            background-color: var(--accent); color: #fff; border: none; border-radius: 8px; 
+            padding: 10px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; font-size: 0.9em; text-transform: uppercase;
         }
         .btn:active { transform: scale(0.95); background-color: #cc0000; }
         .empty-state { text-align: center; width: 100%; padding: 40px 0; color: var(--text-muted); font-style: italic; }
 
+        /* КОНТРОЛЛЕР КОЛИЧЕСТВА (- 1 +) */
+        .qty-control {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-main); border: 1px solid var(--accent); border-radius: 8px; height: 36px; overflow: hidden;
+        }
+        .qty-btn {
+            background: transparent; color: var(--accent); border: none; width: 35px; height: 100%;
+            font-size: 1.2em; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;
+        }
+        .qty-btn:active { background: rgba(230,0,0,0.2); }
+        .qty-val { font-weight: bold; color: #fff; font-size: 0.95em; }
+
         /* КОРЗИНА И ОФОРМЛЕНИЕ */
-        .cart-item, .order-item { 
+        .cart-item { 
             background: var(--bg-card); padding: 12px; border-radius: 10px; margin-bottom: 10px; 
             display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); 
         }
-        .cart-item-title { font-size: 0.95em; color: var(--text-main); margin-bottom: 4px; }
-        .cart-item-price { font-size: 1em; color: var(--accent); font-weight: bold; }
-        .remove-btn { 
-            background: rgba(255, 255, 255, 0.1); border: none; color: var(--text-muted); font-size: 1.2em; 
-            cursor: pointer; border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin-left: 10px; transition: 0.2s;
-        }
-        .remove-btn:active { background: var(--accent); color: white; }
+        .cart-item-title { font-size: 0.9em; color: var(--text-main); margin-bottom: 4px; line-height: 1.2;}
+        .cart-item-price { font-size: 0.95em; color: var(--accent); font-weight: bold; }
         
-        /* Чек (Сумма и Доставка) */
         .cart-summary { background: #0a0a0a; padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px dashed var(--border-color); }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9em; }
         .summary-total { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); color: #fff; font-size: 1.2em; font-weight: bold; }
         
-        /* Форма заказа */
         .checkout-box { background: #0a0a0a; padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
         .checkout-box h3 { margin-top: 0; color: var(--text-main); font-size: 1.1em; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         .form-group { margin-bottom: 15px; }
@@ -139,23 +101,25 @@
             background: var(--bg-card); color: #fff; box-sizing: border-box; font-size: 0.95em; outline: none; 
         }
         .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+        
         .payment-info { 
             background: var(--bg-card); padding: 12px; border-radius: 8px; margin-top: 10px; 
             font-size: 0.85em; border-left: 4px solid var(--accent); display: none; color: #ccc; line-height: 1.4; 
         }
+        .free-delivery-badge { color: #00ff00; font-weight: bold; font-size: 0.85em; margin-top: 4px; display: block;}
 
-        /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ */
+        /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ (Теперь 2 кнопки) */
         .nav-bar { 
             position: fixed; bottom: 0; left: 0; width: 100%; background: #080808; 
             display: flex; justify-content: space-around; padding: 10px 0 25px 0; 
             border-top: 1px solid var(--border-color); z-index: 100; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); 
         }
         .nav-item { 
-            color: var(--text-muted); text-align: center; font-size: 0.75em; cursor: pointer; 
+            color: var(--text-muted); text-align: center; font-size: 0.85em; cursor: pointer; 
             flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s; 
         }
         .nav-item.active { color: var(--accent); font-weight: bold; }
-        .nav-icon { font-size: 1.5em; margin-bottom: 2px;}
+        .nav-icon { font-size: 1.6em; margin-bottom: 2px;}
         .badge { 
             background: var(--accent); color: #fff; font-size: 0.7em; padding: 2px 6px; 
             border-radius: 10px; font-weight: bold; margin-left: 4px; box-shadow: 0 0 5px var(--accent-glow);
@@ -172,7 +136,7 @@
             <div class="cat-chip" onclick="filterCategory('sport', this)">Спортпит</div>
             <div class="cat-chip" onclick="filterCategory('vitamins', this)">Витамины</div>
             <div class="cat-chip" onclick="filterCategory('sets', this)">Наборы</div>
-            <div class="cat-chip" onclick="filterCategory('accessories', this)">Экипировка</div>
+            <div class="cat-chip" onclick="filterCategory('accessories', this)">Шейкеры</div>
         </div>
 
         <div class="grid" id="products-grid"></div>
@@ -194,6 +158,7 @@
             <div class="form-group">
                 <label>Ваш город (обязательно):</label>
                 <input type="text" id="city" placeholder="Например: Махачкала или Москва" oninput="checkCity()">
+                <span id="free-delivery-msg" class="free-delivery-badge" style="display: none;">🎉 Доставка бесплатно!</span>
             </div>
             
             <div class="form-group">
@@ -205,18 +170,12 @@
             
             <div class="payment-info" id="transfer-details">
                 <b>💳 Перевод по СБП:</b><br>
-                По номеру: <b>+7 (999) 000-00-00</b><br>
                 Банки: Сбер, Тинькофф, ВТБ.<br><br>
                 <i>Менеджер подтвердит наличие и пришлет точные реквизиты после оформления заявки.</i>
             </div>
 
             <button class="btn" onclick="submitOrder()" style="margin-top: 15px; padding: 15px;">Отправить заказ</button>
         </div>
-    </div>
-
-    <div id="view-profile" class="container">
-        <h2>История заказов</h2>
-        <div id="order-history"></div>
     </div>
 
     <div class="nav-bar">
@@ -228,22 +187,14 @@
             <span class="nav-icon">🛍</span>
             <div>Корзина<span class="badge" id="cart-badge">0</span></div>
         </div>
-        <div class="nav-item" onclick="switchView('profile', this)">
-            <span class="nav-icon">👤</span>
-            Профиль
-        </div>
     </div>
 
     <script>
-        // Инициализация Telegram API
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем на весь экран
-        tg.enableClosingConfirmation(); // Предупреждение при случайном закрытии свайпом вниз
-        
-        // Красим шапку самого Telegram под стиль сайта
+        tg.expand();
+        tg.enableClosingConfirmation();
         try { tg.setHeaderColor('#050505'); tg.setBackgroundColor('#050505'); } catch(e) {}
 
-        // База товаров
         const products = [
             { id: 1, name: "Maxler Whey Protein", desc: "30г белка в порции. Чистый рост.", price: 4500, category: "sport", img: "https://avatars.mds.yandex.net/get-mpic/16334824/2a0000019cb90d62208755f4e5073447de63/orig" },
             { id: 2, name: "Olimp Creatine", desc: "Взрывная сила и объем мышц.", price: 1900, category: "sport", img: "https://musculshop.ru/upload/resize_cache/webp/upload/medialibrary/96c/96cb81925e85e956d4405362c99fe907.webp" },
@@ -253,30 +204,40 @@
             { id: 6, name: "Genetic Upgrade Set", desc: "Протеин + Креатин + Витамин D3.", price: 7500, category: "sets", img: "https://placehold.co/400x400/121212/E60000?text=HYPER+BUNDLE" }
         ];
 
-        let cart = [];
-        let orders = [];
-        
-        // Безопасное чтение истории заказов
-        try {
-            const saved = localStorage.getItem('hyper_orders');
-            if (saved) orders = JSON.parse(saved);
-        } catch (e) {
-            console.error("Ошибка чтения памяти", e);
-        }
-        
+        let cart = {}; 
+        let currentCategory = 'all';
         let subtotal = 0;
         let deliveryFee = 0;
 
         function init() { 
-            renderProducts('all'); 
-            updateHistory(); 
+            renderProducts(currentCategory); 
         }
 
         function filterCategory(category, el) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
+            currentCategory = category;
             renderProducts(category);
-            try { tg.HapticFeedback.impactOccurred('light'); } catch(e) {}
+        }
+
+        function updateQty(id, delta) {
+            if (!cart[id]) cart[id] = 0;
+            cart[id] += delta;
+            
+            if (cart[id] <= 0) delete cart[id];
+            
+            updateBadge();
+            renderProducts(currentCategory);
+            
+            if (document.getElementById('view-cart').classList.contains('active-view')) {
+                renderCart();
+            }
+        }
+
+        function updateBadge() {
+            let totalItems = 0;
+            for(let id in cart) totalItems += cart[id];
+            document.getElementById('cart-badge').innerText = totalItems;
         }
 
         function renderProducts(category) {
@@ -290,13 +251,23 @@
             }
             
             filtered.forEach(p => {
+                let qty = cart[p.id] || 0;
+                
+                let actionHtml = qty > 0 
+                    ? `<div class="qty-control">
+                           <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
+                           <span class="qty-val">${qty}</span>
+                           <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
+                       </div>`
+                    : `<button class="btn" onclick="updateQty(${p.id}, 1)">В корзину</button>`;
+
                 grid.innerHTML += `
                     <div class="card">
                         <img src="${p.img}" alt="${p.name}">
                         <div class="title">${p.name}</div>
                         <div class="desc">${p.desc}</div>
                         <div class="price">${p.price} ₽</div>
-                        <button class="btn" onclick="addToCart(${p.id})">В корзину</button>
+                        ${actionHtml}
                     </div>`;
             });
         }
@@ -307,13 +278,6 @@
             document.getElementById('view-' + viewId).classList.add('active-view');
             el.classList.add('active');
             if(viewId === 'cart') renderCart();
-            try { tg.HapticFeedback.selectionChanged(); } catch(e) {}
-        }
-
-        function addToCart(id) {
-            cart.push(products.find(p => p.id === id));
-            document.getElementById('cart-badge').innerText = cart.length;
-            try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) {}
         }
 
         function renderCart() {
@@ -321,40 +285,43 @@
             cartDiv.innerHTML = '';
             subtotal = 0;
             
-            if (cart.length === 0) {
+            if (Object.keys(cart).length === 0) {
                 cartDiv.innerHTML = '<div class="empty-state">Ваша корзина пуста 🛒<br><br><small>Перейдите в каталог, чтобы добавить товары.</small></div>';
                 document.getElementById('checkout-form').style.display = 'none';
                 document.getElementById('cart-summary-block').style.display = 'none';
             } else {
-                cart.forEach((item, index) => {
-                    subtotal += item.price;
+                for(let id in cart) {
+                    let p = products.find(x => x.id == id);
+                    let qty = cart[id];
+                    let cost = p.price * qty;
+                    subtotal += cost;
+                    
                     cartDiv.innerHTML += `
                         <div class="cart-item">
-                            <div>
-                                <div class="cart-item-title">${item.name}</div>
-                                <div class="cart-item-price">${item.price} ₽</div>
+                            <div style="flex-grow: 1; padding-right: 10px;">
+                                <div class="cart-item-title">${p.name}</div>
+                                <div class="cart-item-price">${cost} ₽ <span style="color:#666; font-size:0.8em; font-weight:normal;">(${p.price} ₽/шт)</span></div>
                             </div>
-                            <button class="remove-btn" onclick="removeFromCart(${index})">✖</button>
+                            <div class="qty-control" style="width: 85px; flex-shrink: 0;">
+                                <button class="qty-btn" onclick="updateQty(${id}, -1)">-</button>
+                                <span class="qty-val">${qty}</span>
+                                <button class="qty-btn" onclick="updateQty(${id}, 1)">+</button>
+                            </div>
                         </div>`;
-                });
+                }
                 document.getElementById('checkout-form').style.display = 'block';
                 document.getElementById('cart-summary-block').style.display = 'block';
                 checkCity(); 
             }
         }
 
-        function removeFromCart(index) { 
-            cart.splice(index, 1); 
-            document.getElementById('cart-badge').innerText = cart.length; 
-            renderCart(); 
-            try { tg.HapticFeedback.impactOccurred('medium'); } catch(e) {}
-        }
-
         function checkCity() {
             const city = document.getElementById('city').value.trim().toLowerCase();
             const paySelect = document.getElementById('payment-method');
+            const msgObj = document.getElementById('free-delivery-msg');
             
             paySelect.innerHTML = ''; 
+            msgObj.style.display = 'none';
             
             if (city === '') {
                 paySelect.innerHTML = '<option value="none">Сначала введите город...</option>';
@@ -365,9 +332,18 @@
                     <option value="Наличными">💵 Наличными курьеру</option>
                     <option value="Перевод СБП">💳 Перевод по СБП</option>`;
                 deliveryFee = 0; 
+                msgObj.style.display = 'block';
+                msgObj.innerText = '🚚 Бесплатная доставка курьером!';
             } else {
-                paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для СДЭК/Почты)</option>`;
-                deliveryFee = Math.round(subtotal * 0.10); 
+                if (subtotal >= 5000) {
+                    paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
+                    deliveryFee = 0;
+                    msgObj.style.display = 'block';
+                    msgObj.innerText = '🎉 СДЭК/Почта России — Бесплатно!';
+                } else {
+                    paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
+                    deliveryFee = Math.round(subtotal * 0.10); 
+                }
             }
             
             updateTotalDisplay();
@@ -387,7 +363,6 @@
         function submitOrder() {
             const city = document.getElementById('city').value.trim();
             if(!city) { 
-                try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) {}
                 tg.showAlert("Бро, укажи город для расчета доставки!"); 
                 return; 
             }
@@ -395,8 +370,14 @@
             const method = document.getElementById('payment-method').value;
             const finalTotal = subtotal + deliveryFee;
             
+            let itemsList = [];
+            for(let id in cart) {
+                let p = products.find(x => x.id == id);
+                itemsList.push(`${p.name} (x${cart[id]})`);
+            }
+            
             const orderData = {
-                items: cart.map(i => i.name),
+                items: itemsList,
                 subtotal: subtotal,
                 delivery: deliveryFee,
                 total: finalTotal,
@@ -404,34 +385,8 @@
                 payment: method
             };
 
-            // Безопасное сохранение
-            try {
-                orders.unshift({ date: new Date().toLocaleDateString(), total: finalTotal, status: "В обработке" });
-                localStorage.setItem('hyper_orders', JSON.stringify(orders));
-            } catch (e) { console.error(e); }
-
-            // Отправляем данные в Телеграм
             tg.sendData(JSON.stringify(orderData));
             tg.close();
-        }
-
-        function updateHistory() {
-            const histDiv = document.getElementById('order-history');
-            if(orders.length === 0) { 
-                histDiv.innerHTML = '<div class="empty-state">У вас пока нет оформленных заказов.</div>'; 
-                return; 
-            }
-            histDiv.innerHTML = '';
-            orders.forEach(o => {
-                histDiv.innerHTML += `
-                    <div class="order-item">
-                        <div>
-                            <div style="color:var(--text-main); font-size:0.9em; font-weight: bold;">Заказ от ${o.date}</div>
-                            <div style="color:var(--text-muted); font-size:0.8em; margin-top:4px;">${o.status} ⏳</div>
-                        </div>
-                        <div style="color:var(--accent); font-weight:bold;">${o.total} ₽</div>
-                    </div>`;
-            });
         }
 
         init();
