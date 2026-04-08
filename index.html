@@ -35,6 +35,31 @@
         }
         .brand-header span { color: var(--accent); }
 
+        /* ПОИСКОВАЯ СТРОКА */
+        .search-container {
+            padding: 10px 15px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-main);
+            z-index: 10;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 0.95em;
+            transition: 0.3s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
         h2 { text-align: center; margin-top: 10px; font-size: 1.2em; color: var(--text-muted); font-weight: 500; }
 
         .container { padding: 10px 15px; display: none; animation: fadeIn 0.2s ease-in-out; }
@@ -42,7 +67,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* КАТЕГОРИИ */
-        .category-scroll { display: flex; overflow-x: auto; padding: 5px 0 15px 0; gap: 10px; scrollbar-width: none; }
+        .category-scroll { display: flex; overflow-x: auto; padding: 5px 15px 15px 15px; gap: 10px; scrollbar-width: none; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .cat-chip { 
             background: var(--border-color); color: var(--text-muted); padding: 8px 18px; 
@@ -51,7 +76,7 @@
         .cat-chip.active { background: var(--accent); color: #fff; font-weight: bold; box-shadow: 0 0 12px var(--accent-glow); }
 
         /* КАТАЛОГ И КАРТОЧКИ */
-        .grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+        .grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 0 15px; }
         .card { 
             background: var(--bg-card); border-radius: 12px; width: 48%; padding: 10px; 
             box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-color); 
@@ -108,7 +133,7 @@
         }
         .free-delivery-badge { color: #00ff00; font-weight: bold; font-size: 0.85em; margin-top: 4px; display: block;}
 
-        /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ (Теперь 2 кнопки) */
+        /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ */
         .nav-bar { 
             position: fixed; bottom: 0; left: 0; width: 100%; background: #080808; 
             display: flex; justify-content: space-around; padding: 10px 0 25px 0; 
@@ -130,7 +155,12 @@
 
     <div class="brand-header">HYPER <span>NUTRITION</span></div>
 
-    <div id="view-catalog" class="container active-view">
+    <div id="view-catalog" class="container active-view" style="padding: 0;">
+        
+        <div class="search-container">
+            <input type="text" id="search-box" class="search-input" placeholder="Поиск товара (напр. Maxler)..." oninput="filterProducts()">
+        </div>
+
         <div class="category-scroll">
             <div class="cat-chip active" onclick="filterCategory('all', this)">Все</div>
             <div class="cat-chip" onclick="filterCategory('sport', this)">Спортпит</div>
@@ -210,46 +240,35 @@
         let deliveryFee = 0;
 
         function init() { 
-            renderProducts(currentCategory); 
+            filterProducts(); 
         }
 
+        // Обновленная функция: запоминает категорию и запускает общий фильтр
         function filterCategory(category, el) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
             currentCategory = category;
-            renderProducts(category);
+            filterProducts();
         }
 
-        function updateQty(id, delta) {
-            if (!cart[id]) cart[id] = 0;
-            cart[id] += delta;
-            
-            if (cart[id] <= 0) delete cart[id];
-            
-            updateBadge();
-            renderProducts(currentCategory);
-            
-            if (document.getElementById('view-cart').classList.contains('active-view')) {
-                renderCart();
-            }
-        }
-
-        function updateBadge() {
-            let totalItems = 0;
-            for(let id in cart) totalItems += cart[id];
-            document.getElementById('cart-badge').innerText = totalItems;
-        }
-
-        function renderProducts(category) {
+        // ГЛАВНЫЙ ДВИЖОК ОТОБРАЖЕНИЯ (Поиск + Категория)
+        function filterProducts() {
+            const searchInput = document.getElementById('search-box');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const grid = document.getElementById('products-grid');
             grid.innerHTML = '';
-            const filtered = category === 'all' ? products : products.filter(p => p.category === category);
-            
+
+            const filtered = products.filter(p => {
+                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+                const matchesSearch = p.name.toLowerCase().includes(searchQuery) || p.desc.toLowerCase().includes(searchQuery);
+                return matchesCategory && matchesSearch;
+            });
+
             if (filtered.length === 0) { 
-                grid.innerHTML = '<div class="empty-state">Товары в этой категории скоро появятся! ⏳</div>'; 
+                grid.innerHTML = '<div class="empty-state">Ничего не найдено... 🔍<br><br><small>Попробуй изменить параметры поиска.</small></div>'; 
                 return; 
             }
-            
+
             filtered.forEach(p => {
                 let qty = cart[p.id] || 0;
                 
@@ -270,6 +289,26 @@
                         ${actionHtml}
                     </div>`;
             });
+        }
+
+        function updateQty(id, delta) {
+            if (!cart[id]) cart[id] = 0;
+            cart[id] += delta;
+            
+            if (cart[id] <= 0) delete cart[id];
+            
+            updateBadge();
+            filterProducts(); // Перерисовываем с учетом поиска и категорий
+            
+            if (document.getElementById('view-cart').classList.contains('active-view')) {
+                renderCart();
+            }
+        }
+
+        function updateBadge() {
+            let totalItems = 0;
+            for(let id in cart) totalItems += cart[id];
+            document.getElementById('cart-badge').innerText = totalItems;
         }
 
         function switchView(viewId, el) {
