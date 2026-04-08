@@ -62,9 +62,25 @@
 
         h2 { text-align: center; margin-top: 10px; font-size: 1.2em; color: var(--text-muted); font-weight: 500; }
 
-        .container { padding: 10px 15px; display: none; animation: fadeIn 0.2s ease-in-out; }
+        /* ПЛАВНОЕ ПОЯВЛЕНИЕ */
+        .container { padding: 10px 15px; display: none; animation: slideFadeIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
         .active-view { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideFadeIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* СКЕЛЕТОНЫ (Анимация загрузки) */
+        .skeleton {
+            background: linear-gradient(90deg, #121212 25%, #222 50%, #121212 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
 
         /* КАТЕГОРИИ */
         .category-scroll { display: flex; overflow-x: auto; padding: 5px 15px 15px 15px; gap: 10px; scrollbar-width: none; }
@@ -132,6 +148,57 @@
             font-size: 0.85em; border-left: 4px solid var(--accent); display: none; color: #ccc; line-height: 1.4; 
         }
         .free-delivery-badge { color: #00ff00; font-weight: bold; font-size: 0.85em; margin-top: 4px; display: block;}
+
+        /* КНОПКА ЗАКАЗА (Серая -> Красная) */
+        #submit-order-btn {
+            background-color: #222;
+            color: #666;
+            pointer-events: none;
+            margin-top: 15px; 
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        #submit-order-btn.ready {
+            background-color: var(--accent);
+            color: #fff;
+            pointer-events: auto;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* БЛОК РЕКОМЕНДАЦИЙ (КРОСС-СЕЙЛ) */
+        .recom-container {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
+        }
+        .recom-title {
+            font-size: 0.95em;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .recom-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            scrollbar-width: none;
+            padding-bottom: 5px;
+        }
+        .recom-scroll::-webkit-scrollbar { display: none; }
+        .recom-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            min-width: 140px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .recom-card img { width: 100%; height: 80px; object-fit: contain; border-radius: 6px; background: #fff; margin-bottom: 8px;}
+        .recom-card .r-title { font-size: 0.75em; font-weight: bold; color: #fff; margin-bottom: 5px; line-height: 1.2;}
+        .recom-card .r-price { font-size: 0.9em; color: var(--accent); font-weight: bold; margin-bottom: 8px;}
+        .recom-card .btn { padding: 6px; font-size: 0.75em; text-transform: none;}
 
         /* НИЖНЕЕ МЕНЮ НАВИГАЦИИ */
         .nav-bar { 
@@ -204,7 +271,9 @@
                 <i>Менеджер подтвердит наличие и пришлет точные реквизиты после оформления заявки.</i>
             </div>
 
-            <button class="btn" onclick="submitOrder()" style="margin-top: 15px; padding: 15px;">Отправить заказ</button>
+            <button class="btn" id="submit-order-btn" onclick="submitOrder()">Сначала введите город</button>
+            
+            <div id="recommendations-block" class="recom-container" style="display:none;"></div>
         </div>
     </div>
 
@@ -238,12 +307,14 @@
         let currentCategory = 'all';
         let subtotal = 0;
         let deliveryFee = 0;
+        
+        // Память для умных рекомендаций
+        let currentRecomIds = []; 
 
         function init() { 
             filterProducts(); 
         }
 
-        // Обновленная функция: запоминает категорию и запускает общий фильтр
         function filterCategory(category, el) {
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
@@ -251,7 +322,6 @@
             filterProducts();
         }
 
-        // ГЛАВНЫЙ ДВИЖОК ОТОБРАЖЕНИЯ (Поиск + Категория)
         function filterProducts() {
             const searchInput = document.getElementById('search-box');
             const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -282,7 +352,7 @@
 
                 grid.innerHTML += `
                     <div class="card">
-                        <img src="${p.img}" alt="${p.name}">
+                        <img src="${p.img}" class="skeleton" onload="this.classList.remove('skeleton')" alt="${p.name}">
                         <div class="title">${p.name}</div>
                         <div class="desc">${p.desc}</div>
                         <div class="price">${p.price} ₽</div>
@@ -298,7 +368,7 @@
             if (cart[id] <= 0) delete cart[id];
             
             updateBadge();
-            filterProducts(); // Перерисовываем с учетом поиска и категорий
+            filterProducts(); 
             
             if (document.getElementById('view-cart').classList.contains('active-view')) {
                 renderCart();
@@ -316,7 +386,10 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('view-' + viewId).classList.add('active-view');
             el.classList.add('active');
-            if(viewId === 'cart') renderCart();
+            
+            if(viewId === 'cart') {
+                renderCart();
+            }
         }
 
         function renderCart() {
@@ -351,13 +424,55 @@
                 document.getElementById('checkout-form').style.display = 'block';
                 document.getElementById('cart-summary-block').style.display = 'block';
                 checkCity(); 
+                renderRecommendations(); // Обновляем доп. продажи с умной логикой
             }
+        }
+
+        // УМНЫЕ РЕКОМЕНДАЦИИ (КРОСС-СЕЙЛ) БЕЗ МОРГАНИЯ
+        function renderRecommendations() {
+            const recomBlock = document.getElementById('recommendations-block');
+            
+            // Все товары, которых еще нет в корзине
+            let available = products.filter(p => !cart[p.id]);
+            
+            if (available.length === 0) {
+                recomBlock.style.display = 'none';
+                currentRecomIds = [];
+                return;
+            }
+            
+            // Проверяем, актуальны ли наши текущие рекомендации (нет ли их уже в корзине)
+            let stillValid = currentRecomIds.length > 0 && currentRecomIds.every(id => !cart[id]);
+            
+            // Если клиент добавил товар из рекомендаций в корзину, перемешиваем заново
+            if (!stillValid) {
+                available.sort(() => 0.5 - Math.random());
+                currentRecomIds = available.slice(0, 3).map(p => p.id);
+            }
+            
+            let suggested = products.filter(p => currentRecomIds.includes(p.id));
+            
+            recomBlock.style.display = 'block';
+            let html = `<div class="recom-title">💡 С этим товаром берут:</div><div class="recom-scroll">`;
+            
+            suggested.forEach(p => {
+                html += `
+                    <div class="recom-card">
+                        <img src="${p.img}" class="skeleton" onload="this.classList.remove('skeleton')" alt="${p.name}">
+                        <div class="r-title">${p.name}</div>
+                        <div class="r-price">${p.price} ₽</div>
+                        <button class="btn" onclick="updateQty(${p.id}, 1)">+ Добавить</button>
+                    </div>`;
+            });
+            html += `</div>`;
+            recomBlock.innerHTML = html;
         }
 
         function checkCity() {
             const city = document.getElementById('city').value.trim().toLowerCase();
             const paySelect = document.getElementById('payment-method');
             const msgObj = document.getElementById('free-delivery-msg');
+            const submitBtn = document.getElementById('submit-order-btn');
             
             paySelect.innerHTML = ''; 
             msgObj.style.display = 'none';
@@ -366,22 +481,32 @@
                 paySelect.innerHTML = '<option value="none">Сначала введите город...</option>';
                 document.getElementById('transfer-details').style.display = 'none';
                 deliveryFee = 0;
-            } else if (city.includes('махачкала') || city === 'мхк') {
-                paySelect.innerHTML = `
-                    <option value="Наличными">💵 Наличными курьеру</option>
-                    <option value="Перевод СБП">💳 Перевод по СБП</option>`;
-                deliveryFee = 0; 
-                msgObj.style.display = 'block';
-                msgObj.innerText = '🚚 Бесплатная доставка курьером!';
+                
+                // Кнопка серая
+                submitBtn.classList.remove('ready');
+                submitBtn.innerText = 'Сначала введите город';
             } else {
-                if (subtotal >= 5000) {
-                    paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
-                    deliveryFee = 0;
+                // Кнопка красная (готова к отправке)
+                submitBtn.classList.add('ready');
+                submitBtn.innerText = 'Отправить заказ';
+
+                if (city.includes('махачкала') || city === 'мхк') {
+                    paySelect.innerHTML = `
+                        <option value="Наличными">💵 Наличными курьеру</option>
+                        <option value="Перевод СБП">💳 Перевод по СБП</option>`;
+                    deliveryFee = 0; 
                     msgObj.style.display = 'block';
-                    msgObj.innerText = '🎉 СДЭК/Почта России — Бесплатно!';
+                    msgObj.innerText = '🚚 Бесплатная доставка курьером!';
                 } else {
-                    paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
-                    deliveryFee = Math.round(subtotal * 0.10); 
+                    if (subtotal >= 5000) {
+                        paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
+                        deliveryFee = 0;
+                        msgObj.style.display = 'block';
+                        msgObj.innerText = '🎉 СДЭК/Почта России — Бесплатно!';
+                    } else {
+                        paySelect.innerHTML = `<option value="Перевод СБП">💳 Перевод по СБП (для отправки)</option>`;
+                        deliveryFee = Math.round(subtotal * 0.10); 
+                    }
                 }
             }
             
